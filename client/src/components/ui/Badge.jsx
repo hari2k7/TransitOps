@@ -9,6 +9,8 @@ const COLORS = {
   Cancelled: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
   'Off Duty': 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
   Suspended: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  Scheduled: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+  'In Progress': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
 }
 
 export default function Badge({ status }) {
