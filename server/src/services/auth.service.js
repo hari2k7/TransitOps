@@ -2,6 +2,15 @@ import pool from "../config/db.js";
 import { hashPassword, comparePassword } from "../utils/password.js";
 import { generateToken } from "../utils/jwt.js";
 
+// Public — lets the Register form populate a role dropdown with real
+// DB-backed role_id values instead of hardcoding/guessing the seed order.
+export const getAllRoles = async () => {
+    const result = await pool.query(
+        `SELECT id, role_name FROM roles ORDER BY id`
+    );
+    return result.rows;
+};
+
 export const registerUser = async (
     name,
     email,

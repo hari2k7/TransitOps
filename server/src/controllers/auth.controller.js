@@ -1,7 +1,27 @@
 import {
     registerUser,
     loginUser,
+    getAllRoles,
 } from "../services/auth.service.js";
+
+export const listRoles = async (req, res) => {
+    try {
+        const roles = await getAllRoles();
+
+        return res.status(200).json({
+            success: true,
+            data: roles,
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+
+    }
+};
 
 export const register = async (req, res) => {
     try {
