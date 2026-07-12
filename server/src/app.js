@@ -1,7 +1,17 @@
-import express from 'express'
+import express from "express";
+import cors from "cors";
 
-const app = express()
+import authRoutes from "./routes/auth.routes.js";
+import vehicleRoutes from "./routes/vehicle.routes.js";
+import driverRoutes from "./routes/driver.routes.js";
 
-app.use(express.json())
+const app = express();
 
-export default app
+app.use(cors());
+app.use(express.json());
+
+app.use("/api/auth", authRoutes);
+app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/drivers", driverRoutes);
+
+export default app;
