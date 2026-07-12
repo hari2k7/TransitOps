@@ -6,8 +6,6 @@ import Drivers from './pages/Drivers.jsx'
 import Maintenance from './pages/Maintenance.jsx'
 import Trips from './pages/Trips.jsx'
 import Reports from './pages/Reports.jsx'
-import Fuel from './pages/Fuel.jsx'
-import Settings from './pages/Settings.jsx'
 import NotFound from './pages/NotFound.jsx'
 import ProtectedRoute from './routes/ProtectedRoute.jsx'
 import DashboardLayout from './layouts/DashboardLayout.jsx'
@@ -29,9 +27,8 @@ function App() {
         <Route path="/drivers" element={<Drivers />} />
         <Route path="/maintenance" element={<Maintenance />} />
         <Route path="/trips" element={<Trips />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/fuel" element={<Fuel />} />
-        <Route path="/settings" element={<Settings />} />
+        {/* Fuel & Expenses, Analytics
+            routes get added here as each page is built */}
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
