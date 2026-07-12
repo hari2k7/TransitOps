@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   FiTruck,
   FiCheckCircle,
@@ -18,6 +18,8 @@ import { getDashboardStats, getRecentTrips } from '../services/dashboardService.
 import Card from '../components/ui/Card.jsx'
 import Select from '../components/ui/Select.jsx'
 import Loader from '../components/ui/Loader.jsx'
+import Alert from '../components/ui/Alert.jsx'
+import Button from '../components/ui/Button.jsx'
 import FleetStatusChart from '../components/dashboard/FleetStatusChart.jsx'
 import RecentTrips from '../components/dashboard/RecentTrips.jsx'
 import { VEHICLE_TYPES, VEHICLE_STATUSES, REGIONS } from '../utils/constants.js'
@@ -58,25 +60,39 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null)
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  useEffect(() => {
-    let cancelled = false
-    setLoading(true)
+  const fetchData = useCallback(
+    (cancelledRef) => {
+      setLoading(true)
+      setError(null)
 
-    Promise.all([getDashboardStats(filters), getRecentTrips()]).then(
-      ([statsData, tripsData]) => {
-        if (!cancelled) {
+      Promise.all([getDashboardStats(filters), getRecentTrips()])
+        .then(([statsData, tripsData]) => {
+          if (cancelledRef.current) return
           setStats(statsData)
           setTrips(tripsData)
-          setLoading(false)
-        }
-      },
-    )
+        })
+        .catch((err) => {
+          if (cancelledRef.current) return
+          // Same failure whether it's the network being down or a real
+          // server error — either way, stop spinning and let the user retry.
+          setError(err.response?.data?.message || err.message || 'Could not load the dashboard.')
+        })
+        .finally(() => {
+          if (!cancelledRef.current) setLoading(false)
+        })
+    },
+    [filters],
+  )
 
+  useEffect(() => {
+    const cancelledRef = { current: false }
+    fetchData(cancelledRef)
     return () => {
-      cancelled = true
+      cancelledRef.current = true
     }
-  }, [filters])
+  }, [fetchData])
 
   const handleFilterChange = (field) => (e) => {
     setFilters((prev) => ({ ...prev, [field]: e.target.value }))
@@ -140,6 +156,16 @@ export default function Dashboard() {
 
       {loading ? (
         <Loader label="Loading dashboard…" />
+      ) : error ? (
+        <div className="mt-6 max-w-md">
+          <Alert title="Couldn't load the dashboard">{error}</Alert>
+          <Button
+            onClick={() => fetchData({ current: false })}
+            className="mt-3"
+          >
+            Retry
+          </Button>
+        </div>
       ) : (
         <>
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">

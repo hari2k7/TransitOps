@@ -30,6 +30,7 @@ export default function Drivers() {
 
   const [drivers, setDrivers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ status: 'All', category: 'All' })
 
@@ -39,10 +40,13 @@ export default function Drivers() {
 
   const loadDrivers = () => {
     setLoading(true)
-    getDrivers().then((data) => {
-      setDrivers(data)
-      setLoading(false)
-    })
+    setLoadError(null)
+    getDrivers()
+      .then((data) => setDrivers(data))
+      .catch((err) => {
+        setLoadError(err.response?.data?.message || err.message || 'Could not load drivers.')
+      })
+      .finally(() => setLoading(false))
   }
 
   useEffect(() => {
@@ -198,6 +202,13 @@ export default function Drivers() {
       <div className="mt-6">
         {loading ? (
           <Loader label="Loading drivers…" />
+        ) : loadError ? (
+          <div className="max-w-md">
+            <Alert title="Couldn't load drivers">{loadError}</Alert>
+            <Button onClick={loadDrivers} className="mt-3">
+              Retry
+            </Button>
+          </div>
         ) : (
           <Table columns={columns} data={filteredDrivers} emptyMessage="No drivers found." />
         )}

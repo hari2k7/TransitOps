@@ -14,12 +14,14 @@ export const maintenanceValidation = [
         .isIn(MAINTENANCE_TYPES)
         .withMessage(`Type must be one of: ${MAINTENANCE_TYPES.join(", ")}`),
 
-    // No longer required — the frontend form doesn't force a description.
+    // No longer required — the frontend form doesn't force a description,
+    // and short notes like "demo" or "oil" are legitimate. Was previously
+    // min:5, which rejected anything shorter for no real reason.
     body("description")
         .optional({ checkFalsy: true })
         .trim()
-        .isLength({ min: 5, max: 500 })
-        .withMessage("Description must be between 5 and 500 characters"),
+        .isLength({ max: 500 })
+        .withMessage("Description must be under 500 characters"),
 
     body("cost")
         .isFloat({ min: 0 })

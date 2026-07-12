@@ -6,6 +6,7 @@ import Select from '../components/ui/Select.jsx'
 import Button from '../components/ui/Button.jsx'
 import Alert from '../components/ui/Alert.jsx'
 import * as authService from '../services/authService.js'
+import { useConnectionStatus, CONNECTION_MESSAGES } from '../hooks/useConnectionStatus.js'
 
 // Mirrors server/src/validations/auth.validation.js so the user sees a
 // clear message before submitting rather than a generic 400 back.
@@ -32,6 +33,8 @@ export default function Register() {
   })
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const { status: connectionStatus } = useConnectionStatus()
+  const isOffline = connectionStatus === 'offline' || connectionStatus === 'server-unreachable'
 
   // Role list is DB-backed (GET /api/auth/roles) rather than hardcoded, so
   // it can't drift from whatever's actually seeded in the roles table.
@@ -142,10 +145,16 @@ export default function Register() {
           ))}
         </Select>
 
-        {rolesError && <Alert title="Heads up">{rolesError}</Alert>}
-        {error && <Alert title="Registration failed">{error}</Alert>}
+        {isOffline && (
+          <Alert title={CONNECTION_MESSAGES[connectionStatus].title}>
+            {CONNECTION_MESSAGES[connectionStatus].message}
+          </Alert>
+        )}
 
-        <Button type="submit" disabled={submitting} className="mt-2 w-full">
+        {!isOffline && rolesError && <Alert title="Heads up">{rolesError}</Alert>}
+        {!isOffline && error && <Alert title="Registration failed">{error}</Alert>}
+
+        <Button type="submit" disabled={submitting || isOffline} className="mt-2 w-full">
           {submitting ? 'Creating account…' : 'Create Account'}
         </Button>
 

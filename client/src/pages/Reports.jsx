@@ -7,6 +7,7 @@ import { formatCurrency } from '../utils/currency.js'
 import { getAnalytics } from '../services/analyticsService.js'
 import Loader from '../components/ui/Loader.jsx'
 import Alert from '../components/ui/Alert.jsx'
+import Button from '../components/ui/Button.jsx'
 import StatCard from '../components/reports/StatCard.jsx'
 import UtilizationGauge from '../components/reports/UtilizationGauge.jsx'
 import VehicleTypeChart from '../components/reports/VehicleTypeChart.jsx'
@@ -20,13 +21,23 @@ export default function Reports() {
 
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
+
+  const loadAnalytics = () => {
+    setLoading(true)
+    setLoadError(null)
+    getAnalytics()
+      .then((result) => setData(result))
+      .catch((err) => {
+        setLoadError(err.response?.data?.message || err.message || 'Could not load analytics.')
+      })
+      .finally(() => setLoading(false))
+  }
 
   useEffect(() => {
     if (!allowed) return
-    getAnalytics().then((result) => {
-      setData(result)
-      setLoading(false)
-    })
+    loadAnalytics()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowed])
 
   if (!allowed) {
@@ -53,6 +64,13 @@ export default function Reports() {
 
       {loading ? (
         <Loader label="Crunching the numbers…" />
+      ) : loadError ? (
+        <div className="mt-6 max-w-md">
+          <Alert title="Couldn't load analytics">{loadError}</Alert>
+          <Button onClick={loadAnalytics} className="mt-3">
+            Retry
+          </Button>
+        </div>
       ) : (
         <>
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

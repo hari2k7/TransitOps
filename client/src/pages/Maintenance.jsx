@@ -31,6 +31,7 @@ export default function Maintenance() {
   const [records, setRecords] = useState([])
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ type: 'All', status: 'All' })
 
@@ -40,11 +41,16 @@ export default function Maintenance() {
 
   const loadData = () => {
     setLoading(true)
-    Promise.all([getMaintenanceRecords(), getVehicles()]).then(([r, v]) => {
-      setRecords(r)
-      setVehicles(v)
-      setLoading(false)
-    })
+    setLoadError(null)
+    Promise.all([getMaintenanceRecords(), getVehicles()])
+      .then(([r, v]) => {
+        setRecords(r)
+        setVehicles(v)
+      })
+      .catch((err) => {
+        setLoadError(err.response?.data?.message || err.message || 'Could not load maintenance records.')
+      })
+      .finally(() => setLoading(false))
   }
 
   useEffect(() => {
@@ -198,6 +204,13 @@ export default function Maintenance() {
       <div className="mt-6">
         {loading ? (
           <Loader label="Loading maintenance records…" />
+        ) : loadError ? (
+          <div className="max-w-md">
+            <Alert title="Couldn't load maintenance records">{loadError}</Alert>
+            <Button onClick={loadData} className="mt-3">
+              Retry
+            </Button>
+          </div>
         ) : (
           <Table columns={columns} data={filteredRecords} emptyMessage="No maintenance records found." />
         )}

@@ -59,7 +59,10 @@ export default function MaintenanceFormModal({ open, onClose, onSubmit, record }
       await onSubmit(result.data)
       handleClose()
     } catch (err) {
-      setFormError(err.message || 'Something went wrong. Please try again.')
+      // err.message from axios is a generic "Request failed with status
+      // code 400" — the actual reason (e.g. a validation message) is in
+      // the response body.
+      setFormError(err.response?.data?.message || err.message || 'Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
     }

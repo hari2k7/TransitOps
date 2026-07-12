@@ -55,7 +55,7 @@ export default function VehicleFormModal({ open, onClose, onSubmit, vehicle }) {
       await onSubmit(result.data)
       handleClose()
     } catch (err) {
-      setFormError(err.message || 'Something went wrong. Please try again.')
+      setFormError(err.response?.data?.message || err.message || 'Something went wrong. Please try again.')
     } finally {
       setSubmitting(false)
     }

@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import Topbar from '../components/layout/Topbar.jsx'
+import ConnectionGate from '../components/layout/ConnectionGate.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function DashboardLayout() {
@@ -9,7 +10,9 @@ export default function DashboardLayout() {
     <div className="min-h-svh bg-surface">
       <Topbar user={user} onLogout={logout} />
       <main className="px-4 py-6 sm:px-6 lg:px-8">
-        <Outlet />
+        <ConnectionGate>
+          <Outlet />
+        </ConnectionGate>
       </main>
     </div>
   )

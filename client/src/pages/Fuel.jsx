@@ -34,7 +34,7 @@ function TabButton({ active, onClick, children }) {
   );
 }
 
-function FuelForm({ vehicles, onSubmit, onClose, submitting }) {
+function FuelForm({ vehicles, onSubmit, onClose, submitting, submitError }) {
   const { currency } = useSettings();
   const [form, setForm] = useState({ vehicleId: '', liters: '', cost: '', date: '' });
   const [error, setError] = useState('');
@@ -100,9 +100,9 @@ function FuelForm({ vehicles, onSubmit, onClose, submitting }) {
         />
       </div>
 
-      {error && (
+      {(error || submitError) && (
         <div className="px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-400">
-          {error}
+          {error || submitError}
         </div>
       )}
 
@@ -126,7 +126,7 @@ function FuelForm({ vehicles, onSubmit, onClose, submitting }) {
   );
 }
 
-function ExpenseForm({ vehicles, onSubmit, onClose, submitting }) {
+function ExpenseForm({ vehicles, onSubmit, onClose, submitting, submitError }) {
   const { currency } = useSettings();
   const [form, setForm] = useState({ vehicleId: '', type: 'Toll', amount: '', date: '', notes: '' });
   const [error, setError] = useState('');
@@ -206,9 +206,9 @@ function ExpenseForm({ vehicles, onSubmit, onClose, submitting }) {
         />
       </div>
 
-      {error && (
+      {(error || submitError) && (
         <div className="px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-400">
-          {error}
+          {error || submitError}
         </div>
       )}
 
@@ -293,7 +293,9 @@ export default function Fuel() {
       setFuelLogs([log, ...fuelLogs]);
       setShowModal(false);
     } catch (err) {
-      setError('Failed to save fuel log. Please try again.');
+      // Show the backend's actual reason (validation message, DB error,
+      // etc.) instead of a generic string that hides what really failed.
+      setError(err.response?.data?.message || err.message || 'Failed to save fuel log. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -306,7 +308,7 @@ export default function Fuel() {
       setExpenses([expense, ...expenses]);
       setShowModal(false);
     } catch (err) {
-      setError('Failed to save expense. Please try again.');
+      setError(err.response?.data?.message || err.message || 'Failed to save expense. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -465,11 +467,35 @@ export default function Fuel() {
       )}
 
       {showModal && editable && (
-        <Modal title={tab === 'fuel' ? 'New Fuel Log' : 'New Expense'} onClose={() => setShowModal(false)}>
+        <Modal
+          title={tab === 'fuel' ? 'New Fuel Log' : 'New Expense'}
+          onClose={() => {
+            setError('');
+            setShowModal(false);
+          }}
+        >
           {tab === 'fuel' ? (
-            <FuelForm vehicles={vehicles} onSubmit={handleAddFuel} onClose={() => setShowModal(false)} submitting={submitting} />
+            <FuelForm
+              vehicles={vehicles}
+              onSubmit={handleAddFuel}
+              onClose={() => {
+                setError('');
+                setShowModal(false);
+              }}
+              submitting={submitting}
+              submitError={error}
+            />
           ) : (
-            <ExpenseForm vehicles={vehicles} onSubmit={handleAddExpense} onClose={() => setShowModal(false)} submitting={submitting} />
+            <ExpenseForm
+              vehicles={vehicles}
+              onSubmit={handleAddExpense}
+              onClose={() => {
+                setError('');
+                setShowModal(false);
+              }}
+              submitting={submitting}
+              submitError={error}
+            />
           )}
         </Modal>
       )}

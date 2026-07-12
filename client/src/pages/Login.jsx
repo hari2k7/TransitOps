@@ -5,11 +5,14 @@ import Input from '../components/ui/Input.jsx'
 import Button from '../components/ui/Button.jsx'
 import Alert from '../components/ui/Alert.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useConnectionStatus, CONNECTION_MESSAGES } from '../hooks/useConnectionStatus.js'
 
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
   const { login } = useAuth()
+  const { status: connectionStatus } = useConnectionStatus()
+  const isOffline = connectionStatus === 'offline' || connectionStatus === 'server-unreachable'
 
   const [form, setForm] = useState({
     email: '',
@@ -74,13 +77,19 @@ export default function Login() {
           required
         />
 
-        {registeredMessage && !error && (
+        {registeredMessage && !error && !isOffline && (
           <Alert variant="success" title="Success">
             {registeredMessage}
           </Alert>
         )}
 
-        {error && <Alert title="Sign in failed">{error}</Alert>}
+        {isOffline && (
+          <Alert title={CONNECTION_MESSAGES[connectionStatus].title}>
+            {CONNECTION_MESSAGES[connectionStatus].message}
+          </Alert>
+        )}
+
+        {!isOffline && error && <Alert title="Sign in failed">{error}</Alert>}
 
         <div className="flex items-center justify-between pt-1 text-sm">
           <label className="flex items-center gap-2 text-zinc-400">
@@ -97,7 +106,7 @@ export default function Login() {
           </a>
         </div>
 
-        <Button type="submit" disabled={submitting} className="mt-2 w-full">
+        <Button type="submit" disabled={submitting || isOffline} className="mt-2 w-full">
           {submitting ? 'Signing in…' : 'Sign In'}
         </Button>
 

@@ -26,6 +26,7 @@ export default function Vehicles() {
 
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ type: 'All', status: 'All' })
 
@@ -35,10 +36,13 @@ export default function Vehicles() {
 
   const loadVehicles = () => {
     setLoading(true)
-    getVehicles().then((data) => {
-      setVehicles(data)
-      setLoading(false)
-    })
+    setLoadError(null)
+    getVehicles()
+      .then((data) => setVehicles(data))
+      .catch((err) => {
+        setLoadError(err.response?.data?.message || err.message || 'Could not load vehicles.')
+      })
+      .finally(() => setLoading(false))
   }
 
   useEffect(() => {
@@ -187,6 +191,13 @@ export default function Vehicles() {
       <div className="mt-6">
         {loading ? (
           <Loader label="Loading vehicles…" />
+        ) : loadError ? (
+          <div className="max-w-md">
+            <Alert title="Couldn't load vehicles">{loadError}</Alert>
+            <Button onClick={loadVehicles} className="mt-3">
+              Retry
+            </Button>
+          </div>
         ) : (
           <Table columns={columns} data={filteredVehicles} emptyMessage="No vehicles found." />
         )}

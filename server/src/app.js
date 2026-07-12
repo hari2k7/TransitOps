@@ -18,6 +18,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Public, no DB dependency — the frontend polls this to tell "no internet"
+// apart from "backend is down/unreachable" (both look identical to axios
+// as a bare Network Error otherwise).
+app.get("/api/health", (req, res) => {
+    res.status(200).json({ success: true, message: "ok" });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/drivers", driverRoutes);
