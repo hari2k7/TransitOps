@@ -1,4 +1,16 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
+import { canEdit } from '../utils/permissions.js';
+import {
+  getTrips,
+  createTrip,
+  dispatchTrip,
+  completeTrip,
+  cancelTrip,
+  deleteTrip,
+} from '../services/tripService.js';
+import { getVehicles } from '../services/vehicleService.js';
+import { getDrivers } from '../services/driverService.js';
 
 // ==========================================
 // SVG Icons (Fully self-contained & modular)
@@ -213,7 +225,9 @@ export function FilterBar({ activeFilter, onChange }) {
   );
 }
 
-export function TripActions({ trip, onUpdateStatus, onDeleteRequest }) {
+export function TripActions({ trip, onUpdateStatus, onDeleteRequest, editable }) {
+  if (!editable) return null;
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {trip.status === 'Draft' && (
@@ -255,9 +269,9 @@ export function TripActions({ trip, onUpdateStatus, onDeleteRequest }) {
   );
 }
 
-export function TripTable({ trips, vehicles, drivers, onUpdateStatus, onDeleteRequest }) {
-  const getVehicleName = (id) => vehicles.find((v) => v.id === id)?.name || id;
-  const getDriverName = (id) => drivers.find((d) => d.id === id)?.name || id;
+export function TripTable({ trips, vehicles, drivers, onUpdateStatus, onDeleteRequest, editable }) {
+  const getVehicleName = (id) => vehicles.find((v) => String(v.id) === String(id))?.name || id;
+  const getDriverName = (id) => drivers.find((d) => String(d.id) === String(id))?.name || id;
 
   return (
     <div className="overflow-x-auto rounded-xl border border-[#2a2a31] bg-[#17171b] shadow-xl shadow-black/40">
@@ -322,6 +336,7 @@ export function TripTable({ trips, vehicles, drivers, onUpdateStatus, onDeleteRe
                     trip={trip}
                     onUpdateStatus={onUpdateStatus}
                     onDeleteRequest={onDeleteRequest}
+                    editable={editable}
                   />
                 </div>
               </td>
@@ -333,9 +348,9 @@ export function TripTable({ trips, vehicles, drivers, onUpdateStatus, onDeleteRe
   );
 }
 
-export function TripCard({ trip, vehicles, drivers, onUpdateStatus, onDeleteRequest }) {
-  const vehicleName = vehicles.find((v) => v.id === trip.vehicleId)?.name || trip.vehicleId;
-  const driverName = drivers.find((d) => d.id === trip.driverId)?.name || trip.driverId;
+export function TripCard({ trip, vehicles, drivers, onUpdateStatus, onDeleteRequest, editable }) {
+  const vehicleName = vehicles.find((v) => String(v.id) === String(trip.vehicleId))?.name || trip.vehicleId;
+  const driverName = drivers.find((d) => String(d.id) === String(trip.driverId))?.name || trip.driverId;
 
   return (
     <div className="bg-[#17171b] border border-[#2a2a31] rounded-xl p-4.5 shadow-lg shadow-black/30 hover:border-[#d97706]/20 transition-all flex flex-col gap-3.5">
@@ -420,6 +435,7 @@ export function TripCard({ trip, vehicles, drivers, onUpdateStatus, onDeleteRequ
           trip={trip}
           onUpdateStatus={onUpdateStatus}
           onDeleteRequest={onDeleteRequest}
+          editable={editable}
         />
       </div>
     </div>
@@ -477,7 +493,7 @@ export function NewTripModal({ isOpen, onClose, onSubmit, vehicles, drivers }) {
     if (isNaN(cargoVal) || cargoVal <= 0) {
       newErrors.cargo = 'Cargo weight must be a positive number';
     } else if (formData.vehicleId) {
-      const selectedVehicle = vehicles.find((v) => v.id === formData.vehicleId);
+      const selectedVehicle = vehicles.find((v) => String(v.id) === String(formData.vehicleId));
       if (selectedVehicle && cargoVal > selectedVehicle.capacity) {
         newErrors.cargo = `Cargo (${cargoVal} kg) exceeds vehicle capacity (${selectedVehicle.capacity} kg)`;
       }
@@ -504,17 +520,26 @@ export function NewTripModal({ isOpen, onClose, onSubmit, vehicles, drivers }) {
 
     // Verify Vehicle availability
     if (formData.vehicleId) {
-      const selectedVehicle = vehicles.find((v) => v.id === formData.vehicleId);
+      const selectedVehicle = vehicles.find((v) => String(v.id) === String(formData.vehicleId));
       if (selectedVehicle && selectedVehicle.status !== 'Available') {
         newErrors.vehicleId = 'Vehicle must be Available';
       }
     }
 
-    // Verify Driver availability
+    // Verify Driver availability, license validity, and suspension status
     if (formData.driverId) {
-      const selectedDriver = drivers.find((d) => d.id === formData.driverId);
-      if (selectedDriver && selectedDriver.status !== 'Available') {
-        newErrors.driverId = 'Driver must be Available';
+      const selectedDriver = drivers.find((d) => String(d.id) === String(formData.driverId));
+      if (selectedDriver) {
+        if (selectedDriver.status === 'Suspended') {
+          newErrors.driverId = 'Driver is suspended and cannot be assigned.';
+        } else if (
+          selectedDriver.licenseExpiry &&
+          new Date(selectedDriver.licenseExpiry) < new Date()
+        ) {
+          newErrors.driverId = 'Driver license has expired.';
+        } else if (selectedDriver.status !== 'Available') {
+          newErrors.driverId = 'Driver must be Available';
+        }
       }
     }
 
@@ -984,6 +1009,9 @@ export function EmptyState({ onCreateTripClick }) {
 // ==========================================
 
 export default function Trips() {
+  const { role } = useAuth();
+  const editable = canEdit(role, 'trips');
+
   const [trips, setTrips] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -993,30 +1021,24 @@ export default function Trips() {
   const [showModal, setShowModal] = useState(false);
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
-  
+
   // Custom dialog confirmations
   const [deletingId, setDeletingId] = useState(null);
 
-  const BASE_URL = 'http://localhost:3000';
-
+  // NOTE: previously this hit fetch('http://localhost:3000/...') directly —
+  // wrong port (backend is on 5000), missing the /api prefix, and no
+  // fallback while the real trip/vehicle/driver endpoints are still stubs.
+  // Swapped for the dummy-data services (same pattern as Dashboard/Vehicles)
+  // so this page actually renders today; each service has a commented-out
+  // real Axios call ready to swap in once the backend's live.
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [tripsRes, vehiclesRes, driversRes] = await Promise.all([
-        fetch(`${BASE_URL}/trips`),
-        fetch(`${BASE_URL}/vehicles`),
-        fetch(`${BASE_URL}/drivers`),
-      ]);
-
-      if (!tripsRes.ok || !vehiclesRes.ok || !driversRes.ok) {
-        throw new Error('Failed to load trips data from backend API server.');
-      }
-
       const [tripsData, vehiclesData, driversData] = await Promise.all([
-        tripsRes.json(),
-        vehiclesRes.json(),
-        driversRes.json(),
+        getTrips(),
+        getVehicles(),
+        getDrivers(),
       ]);
 
       setTrips(tripsData);
@@ -1033,65 +1055,37 @@ export default function Trips() {
     fetchData();
   }, [fetchData]);
 
-  // Trip Creation Handler
+  // Trip Creation Handler — createTrip() enforces the mandatory business
+  // rules (vehicle/driver availability, license expiry, cargo vs capacity)
+  // and throws with a message NewTripModal already displays via errors.api.
   const handleCreateTrip = useCallback(async (payload) => {
-    const response = await fetch(`${BASE_URL}/trips`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to create a new trip on server.');
-    }
-
-    // Refresh trips data automatically from the database
+    await createTrip(payload);
+    // Refresh so the newly created Draft trip shows up
     fetchData();
   }, [fetchData]);
 
-  // Update Status Handler (PATCH)
+  // Update Status Handler — routes to the matching lifecycle function so
+  // vehicle/driver status cascades correctly (Dispatch/Complete/Cancel all
+  // flip vehicle+driver status per the spec's Mandatory Business Rules).
   const handleUpdateStatus = useCallback(async (id, newStatus) => {
     try {
-      const response = await fetch(`${BASE_URL}/trips/${id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
+      if (newStatus === 'Dispatched') await dispatchTrip(id);
+      else if (newStatus === 'Completed') await completeTrip(id);
+      else if (newStatus === 'Cancelled') await cancelTrip(id);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to patch trip status.');
-      }
-
-      // Update UI state without needing to refresh page
-      setTrips((prevTrips) =>
-        prevTrips.map((trip) => (trip.id === id ? { ...trip, status: newStatus } : trip))
-      );
+      // Re-fetch vehicles/drivers too, since their status may have changed
+      fetchData();
     } catch (err) {
       alert(err.message || 'Unable to update status.');
     }
-  }, []);
+  }, [fetchData]);
 
-  // Delete Action Handler (DELETE)
+  // Delete Action Handler
   const handleDeleteTrip = useCallback(async () => {
     if (!deletingId) return;
 
     try {
-      const response = await fetch(`${BASE_URL}/trips/${deletingId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to delete trip.');
-      }
-
-      // Remove row immediately from the local state
+      await deleteTrip(deletingId);
       setTrips((prevTrips) => prevTrips.filter((trip) => trip.id !== deletingId));
       setDeletingId(null);
     } catch (err) {
@@ -1189,13 +1183,15 @@ export default function Trips() {
               Manage, dispatch, and track active cargo shipments in real-time.
             </p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            type="button"
-            className="inline-flex items-center px-4.5 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-lg transition-all duration-200 active:scale-95 shadow-lg shadow-[#d97706]/15 hover:shadow-[#d97706]/25 border border-transparent focus:outline-none focus:ring-2 focus:ring-[#d97706]/40"
-          >
-            <IconPlus /> Create Trip
-          </button>
+          {editable && (
+            <button
+              onClick={() => setShowModal(true)}
+              type="button"
+              className="inline-flex items-center px-4.5 py-2.5 bg-[#d97706] hover:bg-[#b45309] text-white text-xs font-bold rounded-lg transition-all duration-200 active:scale-95 shadow-lg shadow-[#d97706]/15 hover:shadow-[#d97706]/25 border border-transparent focus:outline-none focus:ring-2 focus:ring-[#d97706]/40"
+            >
+              <IconPlus /> Create Trip
+            </button>
+          )}
         </header>
 
         {/* Statistics Grid */}
@@ -1255,7 +1251,11 @@ export default function Trips() {
         {/* Trips List/Table Area */}
         <main>
           {filteredTrips.length === 0 ? (
-            <EmptyState onCreateTripClick={() => setShowModal(true)} />
+            editable ? (
+              <EmptyState onCreateTripClick={() => setShowModal(true)} />
+            ) : (
+              <p className="text-center text-zinc-500 text-sm py-12">No trips found.</p>
+            )
           ) : (
             <>
               {/* Desktop Table View */}
@@ -1266,6 +1266,7 @@ export default function Trips() {
                   drivers={drivers}
                   onUpdateStatus={handleUpdateStatus}
                   onDeleteRequest={setDeletingId}
+                  editable={editable}
                 />
               </div>
 
@@ -1279,6 +1280,7 @@ export default function Trips() {
                     drivers={drivers}
                     onUpdateStatus={handleUpdateStatus}
                     onDeleteRequest={setDeletingId}
+                    editable={editable}
                   />
                 ))}
               </div>
