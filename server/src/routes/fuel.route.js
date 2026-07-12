@@ -14,9 +14,10 @@ import { fuelValidation } from "../validations/fuel.validation.js";
 
 const router = express.Router();
 
-router.get("/", authenticate, getAllFuel);
+// Financial Analyst is the only role with any fuel-log access per the matrix.
+router.get("/", authenticate, authorize("Financial Analyst"), getAllFuel);
 
-router.get("/:id", authenticate, getFuel);
+router.get("/:id", authenticate, authorize("Financial Analyst"), getFuel);
 
 router.post(
     "/",

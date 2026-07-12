@@ -2,11 +2,9 @@ import pool from "../config/db.js";
 
 
 export const getAllTrips = async () => {
+    // An empty trips table is a valid state (e.g. a fresh DB), not an
+    // error — don't 500 the whole page for it.
     const result = await pool.query("SELECT * FROM trips ORDER BY id");
-
-    if (result.rows.length === 0) {
-        throw new Error("Trip not found");
-    }
 
     return result.rows;
 }
@@ -27,7 +25,10 @@ export const createTrip = async (tripData) => {
         destination,
         cargo_weight,
         planned_distance,
-        revenue
+        revenue,
+        priority,
+        expected_delivery,
+        notes
     } = tripData;
 
     // Check Vehicle
@@ -72,8 +73,8 @@ export const createTrip = async (tripData) => {
     // Create Trip
     const result = await pool.query(
         `INSERT INTO trips
-        (vehicle_id, driver_id, source, destination, cargo_weight, planned_distance, revenue)
-        VALUES($1,$2,$3,$4,$5,$6,$7)
+        (vehicle_id, driver_id, source, destination, cargo_weight, planned_distance, revenue, priority, expected_delivery, notes)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         RETURNING *`,
         [
             vehicle_id,
@@ -82,7 +83,10 @@ export const createTrip = async (tripData) => {
             destination,
             cargo_weight,
             planned_distance,
-            revenue
+            revenue ?? null,
+            priority || "Medium",
+            expected_delivery || null,
+            notes || null
         ]
     );
 
@@ -201,7 +205,10 @@ export const updateTrip = async (id, tripData) => {
         destination,
         cargo_weight,
         planned_distance,
-        revenue
+        revenue,
+        priority,
+        expected_delivery,
+        notes
     } = tripData;
 
     const vehicleResult = await pool.query(
@@ -234,8 +241,11 @@ export const updateTrip = async (id, tripData) => {
             destination=$4,
             cargo_weight=$5,
             planned_distance=$6,
-            revenue=$7
-        WHERE id=$8
+            revenue=$7,
+            priority=$8,
+            expected_delivery=$9,
+            notes=$10
+        WHERE id=$11
         RETURNING *`,
         [
             vehicle_id,
@@ -244,7 +254,10 @@ export const updateTrip = async (id, tripData) => {
             destination,
             cargo_weight,
             planned_distance,
-            revenue,
+            revenue ?? null,
+            priority || "Medium",
+            expected_delivery || null,
+            notes || null,
             id
         ]
     );
@@ -273,6 +286,22 @@ export const cancelTrip = async (id) => {
         "UPDATE trips SET status='Cancelled' WHERE id=$1 RETURNING *",
         [id]
     );
+
+    return result.rows[0];
+};
+
+// New — the frontend Trips page has a permanent delete action that had no
+// backend counterpart (no DELETE route existed at all before).
+export const deleteTrip = async (id) => {
+
+    const result = await pool.query(
+        "DELETE FROM trips WHERE id=$1 RETURNING *",
+        [id]
+    );
+
+    if (result.rows.length === 0) {
+        throw new Error("Trip not found");
+    }
 
     return result.rows[0];
 };

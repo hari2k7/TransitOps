@@ -3,6 +3,7 @@ import {
     getMaintenanceById as getMaintenanceRecordById,
     createMaintenance as createMaintenanceRecord,
     updateMaintenance as updateMaintenanceRecord,
+    deleteMaintenance as deleteMaintenanceRecord,
     completeMaintenance as completeMaintenanceRecord,
 } from "../services/maintenance.service.js";
 
@@ -70,6 +71,23 @@ export const updateMaintenance = async (req, res) => {
         });
     } catch (error) {
         return res.status(400).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+// DELETE /api/maintenance/:id
+export const deleteMaintenance = async (req, res) => {
+    try {
+        await deleteMaintenanceRecord(req.params.id);
+
+        return res.status(200).json({
+            success: true,
+            message: "Maintenance record deleted successfully",
+        });
+    } catch (error) {
+        return res.status(404).json({
             success: false,
             message: error.message,
         });

@@ -5,6 +5,7 @@ import {
     getMaintenanceById,
     createMaintenance,
     updateMaintenance,
+    deleteMaintenance,
     completeMaintenance,
 } from "../controllers/maintenance.controller.js";
 
@@ -16,15 +17,19 @@ import { maintenanceValidation } from "../validations/maintenance.validation.js"
 
 const router = express.Router();
 
+// Fleet Manager (edit), Dispatcher (view), Financial Analyst (view) — Safety
+// Officer has no maintenance access per the matrix.
 router.get(
     "/",
     authenticate,
+    authorize("Fleet Manager", "Dispatcher", "Financial Analyst"),
     getAllMaintenance
 );
 
 router.get(
     "/:id",
     authenticate,
+    authorize("Fleet Manager", "Dispatcher", "Financial Analyst"),
     getMaintenanceById
 );
 
@@ -44,6 +49,13 @@ router.put(
     maintenanceValidation,
     validate,
     updateMaintenance
+);
+
+router.delete(
+    "/:id",
+    authenticate,
+    authorize("Fleet Manager"),
+    deleteMaintenance
 );
 
 router.patch(

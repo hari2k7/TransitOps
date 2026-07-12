@@ -16,3 +16,20 @@ export const getDashboard = async (req, res) => {
 
     }
 };
+
+export const getRecentTrips = async (req, res) => {
+    try {
+
+        const trips = await dashboardService.getRecentTrips();
+
+        res.status(200).json({ success: true, data: trips });
+
+    } catch (err) {
+
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+
+    }
+};

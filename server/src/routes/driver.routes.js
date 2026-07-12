@@ -16,10 +16,21 @@ import { driverValidation } from "../validations/driver.validation.js";
 
 const router = express.Router();
 
-// All authenticated users
-router.get("/", authenticate, getDrivers);
+// Only Fleet Manager and Safety Officer have any driver access per the
+// matrix — Dispatcher and Financial Analyst are both 'none'.
+router.get(
+    "/",
+    authenticate,
+    authorize("Fleet Manager", "Safety Officer"),
+    getDrivers
+);
 
-router.get("/:id", authenticate, getDriver);
+router.get(
+    "/:id",
+    authenticate,
+    authorize("Fleet Manager", "Safety Officer"),
+    getDriver
+);
 
 // Fleet Manager and Safety Officer both have edit access to drivers
 // (per the confirmed RBAC matrix).

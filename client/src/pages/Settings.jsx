@@ -32,7 +32,7 @@ export default function Settings() {
   }
 
   return (
-    <div>
+    <div className="mx-auto max-w-lg text-center">
       <h1 className="text-xl font-semibold text-zinc-100">Settings</h1>
       <p className="mt-1 text-sm text-zinc-500">
         Depot-wide preferences — these apply across the whole app.
@@ -40,12 +40,13 @@ export default function Settings() {
 
       <form
         onSubmit={handleSave}
-        className="mt-6 max-w-lg space-y-4 rounded-xl border border-border-subtle bg-surface-raised p-6"
+        className="mt-6 space-y-4 rounded-xl border border-border-subtle bg-surface-raised p-6 text-left"
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">General</p>
 
         <Input
           label="Depot Name"
+          placeholder="e.g. Gandhinagar Depot GJ4"
           value={form.depotName}
           onChange={handleChange('depotName')}
         />

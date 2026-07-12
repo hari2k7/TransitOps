@@ -39,13 +39,16 @@ export const createFuelLog = async (fuelData) => {
         throw new Error("Vehicle not found");
     }
 
-    const tripResult = await pool.query(
-        "SELECT * FROM trips WHERE id = $1",
-        [trip_id]
-    );
+    // trip_id is optional — a fuel log doesn't have to be tied to a trip.
+    if (trip_id) {
+        const tripResult = await pool.query(
+            "SELECT * FROM trips WHERE id = $1",
+            [trip_id]
+        );
 
-    if (tripResult.rows.length === 0) {
-        throw new Error("Trip not found");
+        if (tripResult.rows.length === 0) {
+            throw new Error("Trip not found");
+        }
     }
 
     const result = await pool.query(
@@ -55,7 +58,7 @@ export const createFuelLog = async (fuelData) => {
         RETURNING *`,
         [
             vehicle_id,
-            trip_id,
+            trip_id || null,
             liters,
             cost,
             log_date

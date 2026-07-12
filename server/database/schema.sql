@@ -13,6 +13,8 @@ DROP TABLE IF EXISTS roles CASCADE;
 
 DROP TYPE IF EXISTS expense_type CASCADE;
 DROP TYPE IF EXISTS maintenance_status CASCADE;
+DROP TYPE IF EXISTS maintenance_type CASCADE;
+DROP TYPE IF EXISTS trip_priority CASCADE;
 DROP TYPE IF EXISTS trip_status CASCADE;
 DROP TYPE IF EXISTS driver_status CASCADE;
 DROP TYPE IF EXISTS vehicle_status CASCADE;
@@ -40,16 +42,37 @@ CREATE TYPE trip_status AS ENUM(
     'Cancelled'
 );
 
+-- Was just ('Active', 'Completed') — expanded to match the frontend's
+-- 4-stage workflow (Maintenance page / MaintenanceFormModal).
 CREATE TYPE maintenance_status AS ENUM(
-    'Active',
-    'Completed'
+    'Scheduled',
+    'In Progress',
+    'Completed',
+    'Cancelled'
 );
 
+-- New — matches MAINTENANCE_TYPES in client/src/utils/constants.js.
+CREATE TYPE maintenance_type AS ENUM(
+    'Routine Service',
+    'Repair',
+    'Inspection',
+    'Tire Change'
+);
+
+-- New — matches the priority field on NewTripModal in Trips.jsx.
+CREATE TYPE trip_priority AS ENUM(
+    'Low',
+    'Medium',
+    'High'
+);
+
+-- Was ('Toll','Parking','Insurance','Repair','Other') — swapped 'Insurance'
+-- and 'Repair' for 'Maintenance' and 'Fine' to match ExpenseForm in Fuel.jsx.
 CREATE TYPE expense_type AS ENUM(
     'Toll',
+    'Maintenance',
     'Parking',
-    'Insurance',
-    'Repair',
+    'Fine',
     'Other'
 );
 
@@ -104,6 +127,9 @@ CREATE TABLE trips(
     cargo_weight DECIMAL(10,2) NOT NULL CHECK(cargo_weight > 0),
     planned_distance DECIMAL(10,2) NOT NULL CHECK(planned_distance > 0),
     revenue DECIMAL(12,2) CHECK(revenue >= 0),
+    priority trip_priority NOT NULL DEFAULT 'Medium',
+    expected_delivery DATE,
+    notes TEXT,
     start_time TIMESTAMP,
     end_time TIMESTAMP,
     status trip_status NOT NULL DEFAULT 'Draft',
@@ -115,11 +141,12 @@ CREATE TABLE trips(
 CREATE TABLE maintenance_logs(
     id SERIAL PRIMARY KEY,
     vehicle_id INT NOT NULL,
-    description TEXT NOT NULL,
+    type maintenance_type NOT NULL DEFAULT 'Routine Service',
+    description TEXT,
     cost DECIMAL(12,2) NOT NULL CHECK(cost >= 0),
     start_date DATE NOT NULL,
     end_date DATE CHECK(end_date >= start_date),
-    status maintenance_status NOT NULL DEFAULT 'Active',
+    status maintenance_status NOT NULL DEFAULT 'Scheduled',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(vehicle_id) REFERENCES vehicles(id)
 );
@@ -127,7 +154,7 @@ CREATE TABLE maintenance_logs(
 CREATE TABLE fuel_logs(
     id SERIAL PRIMARY KEY,
     vehicle_id INT NOT NULL,
-    trip_id INT NOT NULL,
+    trip_id INT,
     liters DECIMAL(10,2) NOT NULL CHECK(liters > 0),
     cost DECIMAL(12,2) NOT NULL CHECK(cost >= 0),
     log_date DATE NOT NULL,

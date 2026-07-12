@@ -5,7 +5,9 @@ export const fuelValidation = [
         .isInt({ gt: 0 })
         .withMessage("Valid vehicle ID is required"),
 
+    // Nullable — the frontend fuel form doesn't collect a trip.
     body("trip_id")
+        .optional({ checkFalsy: true })
         .isInt({ gt: 0 })
         .withMessage("Valid trip ID is required"),
 

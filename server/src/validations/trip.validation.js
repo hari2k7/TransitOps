@@ -1,5 +1,7 @@
 import { body } from "express-validator";
 
+const TRIP_PRIORITIES = ["Low", "Medium", "High"];
+
 export const tripValidation = [
     body("vehicle_id")
         .isInt()
@@ -25,5 +27,21 @@ export const tripValidation = [
 
     body("planned_distance")
         .isFloat({ gt: 0 })
-        .withMessage("Distance must be greater than 0")
+        .withMessage("Distance must be greater than 0"),
+
+    body("priority")
+        .optional()
+        .isIn(TRIP_PRIORITIES)
+        .withMessage(`Priority must be one of: ${TRIP_PRIORITIES.join(", ")}`),
+
+    body("expected_delivery")
+        .optional({ checkFalsy: true })
+        .isDate()
+        .withMessage("Expected delivery must be a valid date"),
+
+    body("notes")
+        .optional({ checkFalsy: true })
+        .trim()
+        .isLength({ max: 1000 })
+        .withMessage("Notes must be under 1000 characters")
 ];

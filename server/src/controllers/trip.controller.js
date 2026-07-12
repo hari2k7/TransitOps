@@ -74,3 +74,15 @@ export const cancelTrip = async (req, res) => {
         res.status(400).json({ success: false, message: err.message });
     }
 };
+
+export const deleteTrip = async (req, res) => {
+    try {
+        await tripService.deleteTrip(req.params.id);
+        res.status(200).json({
+            success: true,
+            message: "Trip deleted successfully",
+        });
+    } catch (err) {
+        res.status(404).json({ success: false, message: err.message });
+    }
+};

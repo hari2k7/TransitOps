@@ -1,7 +1,7 @@
 import { body } from "express-validator";
 
 // Must match the `expense_type` Postgres enum in database/schema.sql exactly.
-const EXPENSE_TYPES = ["Toll", "Parking", "Insurance", "Repair", "Other"];
+const EXPENSE_TYPES = ["Toll", "Maintenance", "Parking", "Fine", "Other"];
 
 export const expenseValidation = [
     body("vehicle_id")

@@ -15,9 +15,10 @@ import { expenseValidation } from "../validations/expense.validation.js";
 
 const router = express.Router();
 
-router.get("/", authenticate, getAllExpenses);
+// Financial Analyst is the only role with any expense access per the matrix.
+router.get("/", authenticate, authorize("Financial Analyst"), getAllExpenses);
 
-router.get("/:id", authenticate, getExpense);
+router.get("/:id", authenticate, authorize("Financial Analyst"), getExpense);
 
 router.post(
     "/",

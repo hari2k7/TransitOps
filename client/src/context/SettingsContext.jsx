@@ -5,7 +5,7 @@ const SettingsContext = createContext(null)
 const STORAGE_KEY = 'transitops_settings'
 
 const DEFAULT_SETTINGS = {
-  depotName: 'Gandhinagar Depot GJ4',
+  depotName: '',
   currency: 'INR',
   distanceUnit: 'Kilometers',
 }

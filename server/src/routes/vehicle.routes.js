@@ -16,9 +16,21 @@ import { vehicleValidation } from "../validations/vehicle.validation.js";
 
 const router = express.Router();
 
-router.get("/", authenticate, getVehicles);
+// Fleet Manager (edit), Dispatcher (view), Financial Analyst (view) — Safety
+// Officer has no fleet access at all per the matrix.
+router.get(
+    "/",
+    authenticate,
+    authorize("Fleet Manager", "Dispatcher", "Financial Analyst"),
+    getVehicles
+);
 
-router.get("/:id", authenticate, getVehicle);
+router.get(
+    "/:id",
+    authenticate,
+    authorize("Fleet Manager", "Dispatcher", "Financial Analyst"),
+    getVehicle
+);
 
 router.post(
     "/",
