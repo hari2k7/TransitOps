@@ -5,7 +5,7 @@ export default function Button({
   ...props
 }) {
   const base =
-    'w-full rounded-md px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+    'rounded-md px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
 
   const variants = {
     primary:
