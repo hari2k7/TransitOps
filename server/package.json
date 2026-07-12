@@ -20,7 +20,11 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-validator": "^7.3.2",
+<<<<<<< HEAD
+    "jsonwebtoken": "^9.0.3"
+=======
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.22.0"
+>>>>>>> 54c0b1122de6ffd21217c48400e45041f8d51be7
   }
 }

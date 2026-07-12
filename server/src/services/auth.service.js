@@ -8,7 +8,6 @@ export const registerUser = async (
     password,
     role_id
 ) => {
-
     // Check if email already exists
     const existingUser = await pool.query(
         `SELECT id FROM users WHERE email = $1`,
@@ -22,7 +21,7 @@ export const registerUser = async (
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Insert user
+    // Insert new user
     const result = await pool.query(
         `INSERT INTO users
         (name, email, password, role_id)
