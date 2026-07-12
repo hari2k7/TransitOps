@@ -21,11 +21,12 @@ router.get("/", authenticate, getDrivers);
 
 router.get("/:id", authenticate, getDriver);
 
-// Fleet Manager only
+// Fleet Manager and Safety Officer both have edit access to drivers
+// (per the confirmed RBAC matrix).
 router.post(
     "/",
     authenticate,
-    authorize("Fleet Manager"),
+    authorize("Fleet Manager", "Safety Officer"),
     driverValidation,
     validate,
     createDriverController
@@ -34,7 +35,7 @@ router.post(
 router.put(
     "/:id",
     authenticate,
-    authorize("Fleet Manager"),
+    authorize("Fleet Manager", "Safety Officer"),
     driverValidation,
     validate,
     updateDriverController
@@ -43,7 +44,7 @@ router.put(
 router.delete(
     "/:id",
     authenticate,
-    authorize("Fleet Manager"),
+    authorize("Fleet Manager", "Safety Officer"),
     deleteDriverController
 );
 

@@ -5,11 +5,9 @@ export const getAllExpenses = async (req, res) => {
     try {
         const expenses = await expenseService.getAllExpenses();
 
-        res.status(200).json(expenses);
+        res.status(200).json({ success: true, data: expenses });
     } catch (err) {
-        res.status(500).json({
-            message: err.message
-        });
+        res.status(500).json({ success: false, message: err.message });
     }
 };
 
@@ -18,18 +16,10 @@ export const getExpense = async (req, res) => {
     try {
         const expense = await expenseService.getExpenseById(req.params.id);
 
-        if (!expense) {
-            return res.status(404).json({
-                message: "Expense not found"
-            });
-        }
-
-        res.status(200).json(expense);
+        res.status(200).json({ success: true, data: expense });
 
     } catch (err) {
-        res.status(500).json({
-            message: err.message
-        });
+        res.status(404).json({ success: false, message: err.message });
     }
 };
 
@@ -39,14 +29,13 @@ export const addExpense = async (req, res) => {
         const expense = await expenseService.createExpense(req.body);
 
         res.status(201).json({
+            success: true,
             message: "Expense created successfully",
-            expense
+            data: expense,
         });
 
     } catch (err) {
-        res.status(500).json({
-            message: err.message
-        });
+        res.status(400).json({ success: false, message: err.message });
     }
 };
 
@@ -58,20 +47,13 @@ export const editExpense = async (req, res) => {
             req.body
         );
 
-        if (!expense) {
-            return res.status(404).json({
-                message: "Expense not found"
-            });
-        }
-
         res.status(200).json({
+            success: true,
             message: "Expense updated successfully",
-            expense
+            data: expense,
         });
 
     } catch (err) {
-        res.status(500).json({
-            message: err.message
-        });
+        res.status(400).json({ success: false, message: err.message });
     }
 };

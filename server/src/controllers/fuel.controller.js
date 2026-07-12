@@ -6,11 +6,9 @@ export const getAllFuel = async (req, res) => {
     try {
         const fuelLogs = await fuelService.getAllFuelLogs();
 
-        res.status(200).json(fuelLogs);
+        res.status(200).json({ success: true, data: fuelLogs });
     } catch (err) {
-        res.status(500).json({
-            message: err.message
-        });
+        res.status(500).json({ success: false, message: err.message });
     }
 };
 
@@ -20,18 +18,10 @@ export const getFuel = async (req, res) => {
     try {
         const fuel = await fuelService.getFuelLogById(req.params.id);
 
-        if (!fuel) {
-            return res.status(404).json({
-                message: "Fuel record not found"
-            });
-        }
-
-        res.status(200).json(fuel);
+        res.status(200).json({ success: true, data: fuel });
 
     } catch (err) {
-        res.status(500).json({
-            message: err.message
-        });
+        res.status(404).json({ success: false, message: err.message });
     }
 };
 
@@ -42,14 +32,13 @@ export const addFuel = async (req, res) => {
         const fuel = await fuelService.createFuelLog(req.body);
 
         res.status(201).json({
+            success: true,
             message: "Fuel record created successfully",
-            fuel
+            data: fuel,
         });
 
     } catch (err) {
-        res.status(500).json({
-            message: err.message
-        });
+        res.status(400).json({ success: false, message: err.message });
     }
 };
 
@@ -62,20 +51,13 @@ export const editFuel = async (req, res) => {
             req.body
         );
 
-        if (!fuel) {
-            return res.status(404).json({
-                message: "Fuel record not found"
-            });
-        }
-
         res.status(200).json({
+            success: true,
             message: "Fuel record updated successfully",
-            fuel
+            data: fuel,
         });
 
     } catch (err) {
-        res.status(500).json({
-            message: err.message
-        });
+        res.status(400).json({ success: false, message: err.message });
     }
 };

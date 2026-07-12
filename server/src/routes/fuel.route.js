@@ -8,6 +8,9 @@ import {
 
 import authenticate from "../middleware/auth.js";
 import authorize from "../middleware/role.js";
+import validate from "../middleware/validate.js";
+
+import { fuelValidation } from "../validations/fuel.validation.js";
 
 const router = express.Router();
 
@@ -18,14 +21,18 @@ router.get("/:id", authenticate, getFuel);
 router.post(
     "/",
     authenticate,
-    authorize("Fleet Manager", "Financial Analyst"),
+    authorize("Financial Analyst"),
+    fuelValidation,
+    validate,
     addFuel
 );
 
 router.put(
     "/:id",
     authenticate,
-    authorize("Fleet Manager", "Financial Analyst"),
+    authorize("Financial Analyst"),
+    fuelValidation,
+    validate,
     editFuel
 );
 

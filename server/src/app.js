@@ -4,7 +4,12 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import vehicleRoutes from "./routes/vehicle.routes.js";
 import driverRoutes from "./routes/driver.routes.js";
-import maintenanceRoutes from "./routes/maintenance.routes.js";
+import maintenanceRoutes from "./routes/maintenance.route.js";
+import tripRoutes from "./routes/trip.route.js";
+import fuelRoutes from "./routes/fuel.route.js";
+import expenseRoutes from "./routes/expense.route.js";
+import analyticsRoutes from "./routes/analytics.route.js";
+import dashboardRoutes from "./routes/dashboard.route.js";
 
 import authenticate from "./middleware/auth.js";
 
@@ -17,6 +22,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/drivers", driverRoutes);
 app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/trips", tripRoutes);
+app.use("/api/fuel-logs", fuelRoutes);
+app.use("/api/expenses", expenseRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 
 app.get("/api/profile", authenticate, (req, res) => {

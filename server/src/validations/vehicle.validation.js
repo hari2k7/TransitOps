@@ -32,4 +32,12 @@ export const vehicleValidation = [
         .trim()
         .notEmpty()
         .withMessage("Region is required"),
+
+    // Only present on update (create always defaults to 'Available' in the
+    // DB) — but if it IS sent, it must be one of the real enum values,
+    // otherwise Postgres would reject it with a raw, unfriendly DB error.
+    body("status")
+        .optional()
+        .isIn(["Available", "On Trip", "In Shop", "Retired"])
+        .withMessage("Invalid vehicle status"),
 ];

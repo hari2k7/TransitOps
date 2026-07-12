@@ -5,11 +5,12 @@ export const getDashboard = async (req, res) => {
 
         const dashboard = await dashboardService.getDashboardStats();
 
-        res.status(200).json(dashboard);
+        res.status(200).json({ success: true, data: dashboard });
 
     } catch (err) {
 
         res.status(500).json({
+            success: false,
             message: err.message
         });
 

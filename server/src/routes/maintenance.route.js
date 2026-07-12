@@ -31,7 +31,7 @@ router.get(
 router.post(
     "/",
     authenticate,
-    authorize("Safety Officer"),
+    authorize("Fleet Manager"),
     maintenanceValidation,
     validate,
     createMaintenance
@@ -40,7 +40,7 @@ router.post(
 router.put(
     "/:id",
     authenticate,
-    authorize("Safety Officer"),
+    authorize("Fleet Manager"),
     maintenanceValidation,
     validate,
     updateMaintenance
@@ -49,7 +49,7 @@ router.put(
 router.patch(
     "/:id/complete",
     authenticate,
-    authorize("Safety Officer"),
+    authorize("Fleet Manager"),
     completeMaintenance
 );
 

@@ -1,13 +1,18 @@
+-- Role names must match the confirmed RBAC matrix exactly (was 'Driver',
+-- which isn't a real role in the system and broke trip authorization).
 INSERT INTO roles(role_name)
 VALUES
 ('Fleet Manager'),
-('Driver'),
+('Dispatcher'),
 ('Safety Officer'),
 ('Financial Analyst');
 
+-- Password below is a bcrypt hash (12 rounds) of 'Admin@123' — was previously
+-- stored as the raw string 'temp_password', which bcrypt.compare() would
+-- never match against, so this account could never actually log in.
 INSERT INTO users(name,email,password,role_id)
 VALUES
-('Admin','admin@transitops.com','temp_password',1);
+('Admin','admin@transitops.com','$2b$12$bmwpIpeIc3cm4H.2LrR2Ie1v7WguQmShB/WQUZ8.Q2ZVi2v0A7y4q',1);
 
 INSERT INTO vehicles(
 registration_number,

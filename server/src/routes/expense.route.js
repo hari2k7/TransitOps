@@ -9,6 +9,9 @@ import {
 
 import authenticate from "../middleware/auth.js";
 import authorize from "../middleware/role.js";
+import validate from "../middleware/validate.js";
+
+import { expenseValidation } from "../validations/expense.validation.js";
 
 const router = express.Router();
 
@@ -19,14 +22,18 @@ router.get("/:id", authenticate, getExpense);
 router.post(
     "/",
     authenticate,
-    authorize("Fleet Manager", "Financial Analyst"),
+    authorize("Financial Analyst"),
+    expenseValidation,
+    validate,
     addExpense
 );
 
 router.put(
     "/:id",
     authenticate,
-    authorize("Fleet Manager", "Financial Analyst"),
+    authorize("Financial Analyst"),
+    expenseValidation,
+    validate,
     editExpense
 );
 

@@ -12,6 +12,9 @@ import {
 
 import authenticate from "../middleware/auth.js";
 import authorize from "../middleware/role.js";
+import validate from "../middleware/validate.js";
+
+import { tripValidation } from "../validations/trip.validation.js";
 
 const router = express.Router();
 
@@ -30,35 +33,39 @@ router.get(
 router.post(
     "/",
     authenticate,
-    authorize("Driver", "Fleet Manager"),
+    authorize("Dispatcher"),
+    tripValidation,
+    validate,
     createTrip
 );
 
 router.put(
     "/:id",
     authenticate,
-    authorize("Driver", "Fleet Manager"),
+    authorize("Dispatcher"),
+    tripValidation,
+    validate,
     updateTrip
 );
 
 router.put(
     "/:id/dispatch",
     authenticate,
-    authorize("Driver", "Fleet Manager"),
+    authorize("Dispatcher"),
     dispatchTrip
 );
 
 router.put(
     "/:id/complete",
     authenticate,
-    authorize("Driver", "Fleet Manager"),
+    authorize("Dispatcher"),
     completeTrip
 );
 
 router.put(
     "/:id/cancel",
     authenticate,
-    authorize("Driver", "Fleet Manager"),
+    authorize("Dispatcher"),
     cancelTrip
 );
 
