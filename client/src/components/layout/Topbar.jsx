@@ -14,6 +14,7 @@ function Topbar({ user, onLogout }) {
     { name: 'Maintenance', href: '/maintenance' },
     { name: 'Fuel & Expenses', href: '/fuel' },
     { name: 'Reports', href: '/reports' },
+    { name: 'Settings', href: '/settings' },
   ];
 
   return (

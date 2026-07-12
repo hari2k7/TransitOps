@@ -5,6 +5,8 @@ import Select from '../ui/Select.jsx'
 import Button from '../ui/Button.jsx'
 import { vehicleSchema } from '../../utils/schemas/vehicleSchema.js'
 import { VEHICLE_TYPES, VEHICLE_STATUSES, REGIONS } from '../../utils/constants.js'
+import { useSettings } from '../../context/SettingsContext.jsx'
+import { currencySymbol } from '../../utils/currency.js'
 
 const EMPTY_FORM = {
   registrationNumber: '',
@@ -18,6 +20,7 @@ const EMPTY_FORM = {
 }
 
 export default function VehicleFormModal({ open, onClose, onSubmit, vehicle }) {
+  const { currency } = useSettings()
   const [form, setForm] = useState(vehicle ?? EMPTY_FORM)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -136,7 +139,7 @@ export default function VehicleFormModal({ open, onClose, onSubmit, vehicle }) {
 
         <div>
           <Input
-            label="Acquisition Cost (₹)"
+            label={`Acquisition Cost (${currencySymbol(currency)})`}
             type="number"
             value={form.acquisitionCost}
             onChange={handleChange('acquisitionCost')}

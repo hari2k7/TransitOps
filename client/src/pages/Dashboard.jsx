@@ -12,6 +12,8 @@ import {
   FiDollarSign,
 } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useSettings } from '../context/SettingsContext.jsx'
+import { formatCurrency } from '../utils/currency.js'
 import { getDashboardStats, getRecentTrips } from '../services/dashboardService.js'
 import Card from '../components/ui/Card.jsx'
 import Select from '../components/ui/Select.jsx'
@@ -34,19 +36,20 @@ const KPI_CARDS = [
     label: 'Fuel Cost',
     icon: FiDroplet,
     accent: 'accent',
-    format: (v) => `₹${v.toLocaleString('en-IN')}`,
+    isCurrency: true,
   },
   {
     key: 'expenseCost',
     label: 'Expense Cost',
     icon: FiDollarSign,
     accent: 'violet',
-    format: (v) => `₹${v.toLocaleString('en-IN')}`,
+    isCurrency: true,
   },
 ]
 
 export default function Dashboard() {
   const { user } = useAuth()
+  const { currency } = useSettings()
   const [filters, setFilters] = useState({
     vehicleType: 'All',
     status: 'All',
@@ -145,7 +148,9 @@ export default function Dashboard() {
                 key={card.key}
                 title={card.label}
                 value={
-                  card.format ? card.format(stats[card.key]) : stats[card.key]
+                  card.isCurrency
+                    ? formatCurrency(stats[card.key], currency)
+                    : stats[card.key]
                 }
                 icon={card.icon}
                 accent={card.accent}

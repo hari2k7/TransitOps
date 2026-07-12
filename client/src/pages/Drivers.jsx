@@ -7,7 +7,7 @@ import {
   updateDriver,
   deleteDriver,
 } from '../services/driverService.js'
-import { canEdit } from '../utils/permissions.js'
+import { canEdit, canAccess } from '../utils/permissions.js'
 import { DRIVER_STATUSES, LICENSE_CATEGORIES } from '../utils/constants.js'
 import Table from '../components/ui/Table.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -16,6 +16,7 @@ import Input from '../components/ui/Input.jsx'
 import Button from '../components/ui/Button.jsx'
 import Loader from '../components/ui/Loader.jsx'
 import Modal from '../components/ui/Modal.jsx'
+import Alert from '../components/ui/Alert.jsx'
 import DriverFormModal from '../components/drivers/DriverFormModal.jsx'
 
 function isExpired(dateStr) {
@@ -25,6 +26,7 @@ function isExpired(dateStr) {
 export default function Drivers() {
   const { role } = useAuth()
   const editable = canEdit(role, 'drivers')
+  const allowed = canAccess(role, 'drivers')
 
   const [drivers, setDrivers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -44,8 +46,8 @@ export default function Drivers() {
   }
 
   useEffect(() => {
-    loadDrivers()
-  }, [])
+    if (allowed) loadDrivers()
+  }, [allowed])
 
   const filteredDrivers = useMemo(() => {
     return drivers.filter((d) => {
@@ -131,6 +133,18 @@ export default function Drivers() {
         ]
       : []),
   ]
+
+  if (!allowed) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <div className="w-full max-w-md">
+          <Alert title="Access restricted">
+            Your role ({role}) doesn't have access to Drivers.
+          </Alert>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>

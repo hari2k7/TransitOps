@@ -6,6 +6,8 @@ import Button from '../ui/Button.jsx'
 import { maintenanceSchema } from '../../utils/schemas/maintenanceSchema.js'
 import { MAINTENANCE_TYPES, MAINTENANCE_STATUSES } from '../../utils/constants.js'
 import { getVehicles } from '../../services/vehicleService.js'
+import { useSettings } from '../../context/SettingsContext.jsx'
+import { currencySymbol } from '../../utils/currency.js'
 
 const EMPTY_FORM = {
   vehicleId: '',
@@ -17,6 +19,7 @@ const EMPTY_FORM = {
 }
 
 export default function MaintenanceFormModal({ open, onClose, onSubmit, record }) {
+  const { currency } = useSettings()
   const [vehicles, setVehicles] = useState([])
   const [form, setForm] = useState(record ? { ...record, vehicleId: String(record.vehicleId) } : EMPTY_FORM)
   const [errors, setErrors] = useState({})
@@ -113,7 +116,7 @@ export default function MaintenanceFormModal({ open, onClose, onSubmit, record }
 
         <div>
           <Input
-            label="Cost (₹)"
+            label={`Cost (${currencySymbol(currency)})`}
             type="number"
             value={form.cost}
             onChange={handleChange('cost')}

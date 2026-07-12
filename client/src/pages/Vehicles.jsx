@@ -7,7 +7,7 @@ import {
   updateVehicle,
   deleteVehicle,
 } from '../services/vehicleService.js'
-import { canEdit } from '../utils/permissions.js'
+import { canEdit, canAccess } from '../utils/permissions.js'
 import { VEHICLE_TYPES, VEHICLE_STATUSES, REGIONS } from '../utils/constants.js'
 import Table from '../components/ui/Table.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -16,11 +16,13 @@ import Input from '../components/ui/Input.jsx'
 import Button from '../components/ui/Button.jsx'
 import Loader from '../components/ui/Loader.jsx'
 import Modal from '../components/ui/Modal.jsx'
+import Alert from '../components/ui/Alert.jsx'
 import VehicleFormModal from '../components/vehicles/VehicleFormModal.jsx'
 
 export default function Vehicles() {
   const { role } = useAuth()
   const editable = canEdit(role, 'fleet')
+  const allowed = canAccess(role, 'fleet')
 
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
@@ -40,8 +42,8 @@ export default function Vehicles() {
   }
 
   useEffect(() => {
-    loadVehicles()
-  }, [])
+    if (allowed) loadVehicles()
+  }, [allowed])
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((v) => {
@@ -120,6 +122,18 @@ export default function Vehicles() {
         ]
       : []),
   ]
+
+  if (!allowed) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <div className="w-full max-w-md">
+          <Alert title="Access restricted">
+            Your role ({role}) doesn't have access to Vehicles.
+          </Alert>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div>

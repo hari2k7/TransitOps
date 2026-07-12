@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { canEdit } from '../utils/permissions.js';
+import { canEdit, canAccess } from '../utils/permissions.js';
+import Alert from '../components/ui/Alert.jsx';
 import {
   getTrips,
   createTrip,
@@ -1011,6 +1012,7 @@ export function EmptyState({ onCreateTripClick }) {
 export default function Trips() {
   const { role } = useAuth();
   const editable = canEdit(role, 'trips');
+  const allowed = canAccess(role, 'trips');
 
   const [trips, setTrips] = useState([]);
   const [vehicles, setVehicles] = useState([]);
@@ -1052,8 +1054,8 @@ export default function Trips() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (allowed) fetchData();
+  }, [fetchData, allowed]);
 
   // Trip Creation Handler — createTrip() enforces the mandatory business
   // rules (vehicle/driver availability, license expiry, cargo vs capacity)
@@ -1143,6 +1145,19 @@ export default function Trips() {
       return true;
     });
   }, [trips, filter, search, vehicles, drivers]);
+
+  if (!allowed) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <div className="w-full max-w-md">
+          <Alert title="Access restricted">
+            Your role ({role}) doesn't have access to Trips. Contact a Dispatcher or Safety
+            Officer if you need this data.
+          </Alert>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
