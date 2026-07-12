@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { usePolling } from '../hooks/usePolling.js'
 import {
   FiTruck,
   FiCheckCircle,
@@ -61,38 +62,54 @@ export default function Dashboard() {
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const mountedRef = useRef(true)
 
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  // silent=true is used for background polling refreshes: no spinner flash,
+  // and a failed poll doesn't blow away already-visible data with an error
+  // screen — it's just logged and retried on the next tick.
   const fetchData = useCallback(
-    (cancelledRef) => {
-      setLoading(true)
-      setError(null)
+    (silent = false) => {
+      if (!silent) {
+        setLoading(true)
+        setError(null)
+      }
 
       Promise.all([getDashboardStats(filters), getRecentTrips()])
         .then(([statsData, tripsData]) => {
-          if (cancelledRef.current) return
+          if (!mountedRef.current) return
           setStats(statsData)
           setTrips(tripsData)
+          if (silent) setError(null)
         })
         .catch((err) => {
-          if (cancelledRef.current) return
+          if (!mountedRef.current) return
+          if (silent) {
+            console.warn('Background dashboard refresh failed:', err.message)
+            return
+          }
           // Same failure whether it's the network being down or a real
           // server error — either way, stop spinning and let the user retry.
           setError(err.response?.data?.message || err.message || 'Could not load the dashboard.')
         })
         .finally(() => {
-          if (!cancelledRef.current) setLoading(false)
+          if (mountedRef.current && !silent) setLoading(false)
         })
     },
     [filters],
   )
 
   useEffect(() => {
-    const cancelledRef = { current: false }
-    fetchData(cancelledRef)
-    return () => {
-      cancelledRef.current = true
-    }
+    fetchData(false)
   }, [fetchData])
+
+  usePolling(() => fetchData(true), { intervalMs: 20000 })
 
   const handleFilterChange = (field) => (e) => {
     setFilters((prev) => ({ ...prev, [field]: e.target.value }))
@@ -159,10 +176,7 @@ export default function Dashboard() {
       ) : error ? (
         <div className="mt-6 max-w-md">
           <Alert title="Couldn't load the dashboard">{error}</Alert>
-          <Button
-            onClick={() => fetchData({ current: false })}
-            className="mt-3"
-          >
+          <Button onClick={() => fetchData(false)} className="mt-3">
             Retry
           </Button>
         </div>

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { FiPlus } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSettings } from '../context/SettingsContext.jsx'
+import { usePolling } from '../hooks/usePolling.js'
 import {
   getMaintenanceRecords,
   createMaintenance,
@@ -39,23 +40,34 @@ export default function Maintenance() {
   const [editingRecord, setEditingRecord] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
-  const loadData = () => {
-    setLoading(true)
-    setLoadError(null)
+  const loadData = (silent = false) => {
+    if (!silent) {
+      setLoading(true)
+      setLoadError(null)
+    }
     Promise.all([getMaintenanceRecords(), getVehicles()])
       .then(([r, v]) => {
         setRecords(r)
         setVehicles(v)
+        if (silent) setLoadError(null)
       })
       .catch((err) => {
+        if (silent) {
+          console.warn('Background maintenance refresh failed:', err.message)
+          return
+        }
         setLoadError(err.response?.data?.message || err.message || 'Could not load maintenance records.')
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
   }
 
   useEffect(() => {
     if (allowed) loadData()
   }, [allowed])
+
+  usePolling(() => loadData(true), { enabled: allowed, intervalMs: 20000 })
 
   const vehicleName = (vehicleId) => {
     const v = vehicles.find((v) => v.id === Number(vehicleId))
@@ -207,7 +219,7 @@ export default function Maintenance() {
         ) : loadError ? (
           <div className="max-w-md">
             <Alert title="Couldn't load maintenance records">{loadError}</Alert>
-            <Button onClick={loadData} className="mt-3">
+            <Button onClick={() => loadData()} className="mt-3">
               Retry
             </Button>
           </div>

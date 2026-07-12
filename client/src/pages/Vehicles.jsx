@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FiPlus } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext.jsx'
+import { usePolling } from '../hooks/usePolling.js'
 import {
   getVehicles,
   createVehicle,
@@ -34,20 +35,35 @@ export default function Vehicles() {
   const [editingVehicle, setEditingVehicle] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
-  const loadVehicles = () => {
-    setLoading(true)
-    setLoadError(null)
+  // silent=true is for background polling — no spinner, and a failed poll
+  // doesn't replace an already-loaded table with an error screen.
+  const loadVehicles = (silent = false) => {
+    if (!silent) {
+      setLoading(true)
+      setLoadError(null)
+    }
     getVehicles()
-      .then((data) => setVehicles(data))
+      .then((data) => {
+        setVehicles(data)
+        if (silent) setLoadError(null)
+      })
       .catch((err) => {
+        if (silent) {
+          console.warn('Background vehicles refresh failed:', err.message)
+          return
+        }
         setLoadError(err.response?.data?.message || err.message || 'Could not load vehicles.')
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
   }
 
   useEffect(() => {
     if (allowed) loadVehicles()
   }, [allowed])
+
+  usePolling(() => loadVehicles(true), { enabled: allowed, intervalMs: 20000 })
 
   const filteredVehicles = useMemo(() => {
     return vehicles.filter((v) => {
@@ -194,7 +210,7 @@ export default function Vehicles() {
         ) : loadError ? (
           <div className="max-w-md">
             <Alert title="Couldn't load vehicles">{loadError}</Alert>
-            <Button onClick={loadVehicles} className="mt-3">
+            <Button onClick={() => loadVehicles()} className="mt-3">
               Retry
             </Button>
           </div>

@@ -5,6 +5,7 @@ import { useSettings } from '../context/SettingsContext.jsx'
 import { canAccess } from '../utils/permissions.js'
 import { formatCurrency } from '../utils/currency.js'
 import { getAnalytics } from '../services/analyticsService.js'
+import { usePolling } from '../hooks/usePolling.js'
 import Loader from '../components/ui/Loader.jsx'
 import Alert from '../components/ui/Alert.jsx'
 import Button from '../components/ui/Button.jsx'
@@ -23,15 +24,26 @@ export default function Reports() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
 
-  const loadAnalytics = () => {
-    setLoading(true)
-    setLoadError(null)
+  const loadAnalytics = (silent = false) => {
+    if (!silent) {
+      setLoading(true)
+      setLoadError(null)
+    }
     getAnalytics()
-      .then((result) => setData(result))
+      .then((result) => {
+        setData(result)
+        if (silent) setLoadError(null)
+      })
       .catch((err) => {
+        if (silent) {
+          console.warn('Background analytics refresh failed:', err.message)
+          return
+        }
         setLoadError(err.response?.data?.message || err.message || 'Could not load analytics.')
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
   }
 
   useEffect(() => {
@@ -39,6 +51,8 @@ export default function Reports() {
     loadAnalytics()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowed])
+
+  usePolling(() => loadAnalytics(true), { enabled: allowed, intervalMs: 20000 })
 
   if (!allowed) {
     return (
@@ -67,7 +81,7 @@ export default function Reports() {
       ) : loadError ? (
         <div className="mt-6 max-w-md">
           <Alert title="Couldn't load analytics">{loadError}</Alert>
-          <Button onClick={loadAnalytics} className="mt-3">
+          <Button onClick={() => loadAnalytics()} className="mt-3">
             Retry
           </Button>
         </div>

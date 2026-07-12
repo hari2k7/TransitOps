@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FiPlus } from 'react-icons/fi'
 import { useAuth } from '../context/AuthContext.jsx'
+import { usePolling } from '../hooks/usePolling.js'
 import {
   getDrivers,
   createDriver,
@@ -38,20 +39,33 @@ export default function Drivers() {
   const [editingDriver, setEditingDriver] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
-  const loadDrivers = () => {
-    setLoading(true)
-    setLoadError(null)
+  const loadDrivers = (silent = false) => {
+    if (!silent) {
+      setLoading(true)
+      setLoadError(null)
+    }
     getDrivers()
-      .then((data) => setDrivers(data))
+      .then((data) => {
+        setDrivers(data)
+        if (silent) setLoadError(null)
+      })
       .catch((err) => {
+        if (silent) {
+          console.warn('Background drivers refresh failed:', err.message)
+          return
+        }
         setLoadError(err.response?.data?.message || err.message || 'Could not load drivers.')
       })
-      .finally(() => setLoading(false))
+      .finally(() => {
+        if (!silent) setLoading(false)
+      })
   }
 
   useEffect(() => {
     if (allowed) loadDrivers()
   }, [allowed])
+
+  usePolling(() => loadDrivers(true), { enabled: allowed, intervalMs: 20000 })
 
   const filteredDrivers = useMemo(() => {
     return drivers.filter((d) => {
@@ -205,7 +219,7 @@ export default function Drivers() {
         ) : loadError ? (
           <div className="max-w-md">
             <Alert title="Couldn't load drivers">{loadError}</Alert>
-            <Button onClick={loadDrivers} className="mt-3">
+            <Button onClick={() => loadDrivers()} className="mt-3">
               Retry
             </Button>
           </div>

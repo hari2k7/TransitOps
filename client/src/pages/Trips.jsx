@@ -12,6 +12,7 @@ import {
 } from '../services/tripService.js';
 import { getVehicles } from '../services/vehicleService.js';
 import { getDrivers } from '../services/driverService.js';
+import { usePolling } from '../hooks/usePolling.js';
 
 // ==========================================
 // SVG Icons (Fully self-contained & modular)
@@ -1033,9 +1034,11 @@ export default function Trips() {
   // Swapped for the dummy-data services (same pattern as Dashboard/Vehicles)
   // so this page actually renders today; each service has a commented-out
   // real Axios call ready to swap in once the backend's live.
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchData = useCallback(async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const [tripsData, vehiclesData, driversData] = await Promise.all([
         getTrips(),
@@ -1046,16 +1049,23 @@ export default function Trips() {
       setTrips(tripsData);
       setVehicles(vehiclesData);
       setDrivers(driversData);
+      if (silent) setError(null);
     } catch (err) {
+      if (silent) {
+        console.warn('Background trips refresh failed:', err.message);
+        return;
+      }
       setError(err.message || 'An unexpected networking failure occurred.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (allowed) fetchData();
   }, [fetchData, allowed]);
+
+  usePolling(() => fetchData(true), { enabled: allowed, intervalMs: 20000 });
 
   // Trip Creation Handler — createTrip() enforces the mandatory business
   // rules (vehicle/driver availability, license expiry, cargo vs capacity)
@@ -1179,7 +1189,7 @@ export default function Trips() {
   if (error) {
     return (
       <div className="min-h-screen bg-[#0d0d10] p-6 flex items-center justify-center">
-        <ErrorState message={error} onRetry={fetchData} />
+        <ErrorState message={error} onRetry={() => fetchData()} />
       </div>
     );
   }

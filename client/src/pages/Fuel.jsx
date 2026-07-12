@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getFuelLogs, createFuelLog } from '../services/fuelService.js';
+import { usePolling } from '../hooks/usePolling.js';
 import { getExpenses, createExpense } from '../services/expenseService.js';
 import { getVehicles } from '../services/vehicleService.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -262,9 +263,11 @@ export default function Fuel() {
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchAll = async () => {
-    setLoading(true);
-    setError('');
+  const fetchAll = async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setError('');
+    }
     try {
       const [fuelData, expenseData, vehicleData] = await Promise.all([
         getFuelLogs(),
@@ -274,10 +277,15 @@ export default function Fuel() {
       setFuelLogs(fuelData);
       setExpenses(expenseData);
       setVehicles(vehicleData);
+      if (silent) setError('');
     } catch (err) {
+      if (silent) {
+        console.warn('Background fuel/expense refresh failed:', err.message);
+        return;
+      }
       setError('Could not load data from the server. Please check your connection and try again.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -285,6 +293,8 @@ export default function Fuel() {
     if (allowed) fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allowed]);
+
+  usePolling(() => fetchAll(true), { enabled: allowed, intervalMs: 20000 });
 
   const handleAddFuel = async (form) => {
     setSubmitting(true);
@@ -356,7 +366,7 @@ export default function Fuel() {
       {error && (
         <div className="mb-5 px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-sm text-red-400 flex items-center justify-between">
           {error}
-          <button onClick={fetchAll} className="text-xs font-medium underline hover:text-red-300">Retry</button>
+          <button onClick={() => fetchAll()} className="text-xs font-medium underline hover:text-red-300">Retry</button>
         </div>
       )}
 
