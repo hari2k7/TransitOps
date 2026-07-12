@@ -1,19 +1,50 @@
 import express from "express";
 
 import {
-    createDriver,
     getDrivers,
-    getDriverById,
-    updateDriver,
-    deleteDriver
+    getDriver,
+    createDriverController,
+    updateDriverController,
+    deleteDriverController,
 } from "../controllers/driver.controller.js";
+
+import authenticate from "../middleware/auth.js";
+import authorize from "../middleware/role.js";
+import validate from "../middleware/validate.js";
+
+import { driverValidation } from "../validations/driver.validation.js";
 
 const router = express.Router();
 
-router.get("/", getDrivers);
-router.get("/:id", getDriverById);
-router.post("/", createDriver);
-router.put("/:id", updateDriver);
-router.delete("/:id", deleteDriver);
+// All authenticated users
+router.get("/", authenticate, getDrivers);
+
+router.get("/:id", authenticate, getDriver);
+
+// Fleet Manager only
+router.post(
+    "/",
+    authenticate,
+    authorize("Fleet Manager"),
+    driverValidation,
+    validate,
+    createDriverController
+);
+
+router.put(
+    "/:id",
+    authenticate,
+    authorize("Fleet Manager"),
+    driverValidation,
+    validate,
+    updateDriverController
+);
+
+router.delete(
+    "/:id",
+    authenticate,
+    authorize("Fleet Manager"),
+    deleteDriverController
+);
 
 export default router;
