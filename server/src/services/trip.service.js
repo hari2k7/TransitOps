@@ -13,6 +13,9 @@ export const getAllTrips = async () => {
 
 export const getTripById = async (id) => {
     const result = await pool.query("SELECT * FROM trips WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
+        throw new Error("trip not found");
+    }
     return result.rows[0];
 }
 
@@ -39,6 +42,11 @@ export const createTrip = async (tripData) => {
 
     const vehicle = vehicleResult.rows[0];
 
+    // Check Vehicle Availability
+    if (vehicle.status !== "Available") {
+        throw new Error("Vehicle is not available");
+    }
+
     // Check Driver
     const driverResult = await pool.query(
         "SELECT * FROM drivers WHERE id = $1",
@@ -47,6 +55,13 @@ export const createTrip = async (tripData) => {
 
     if (driverResult.rows.length === 0) {
         throw new Error("Driver not found");
+    }
+
+    const driver = driverResult.rows[0];
+
+    // Check Driver Availability
+    if (driver.status !== "Available") {
+        throw new Error("Driver is not available");
     }
 
     // Check Cargo Capacity
@@ -72,7 +87,7 @@ export const createTrip = async (tripData) => {
     );
 
     return result.rows[0];
-}
+};
 
 export const dispatchTrip = async (id) => {
     const tripResult = await pool.query(
@@ -111,10 +126,6 @@ export const dispatchTrip = async (id) => {
         throw new Error("Driver license has expired");
     }
 
-    if (trip.status !== "Draft") {
-        throw new Error("Only draft trips can be dispatched");
-    }
-
     await pool.query(
         "UPDATE trips SET status='Dispatched', start_time=CURRENT_TIMESTAMP WHERE id=$1",
         [id]
@@ -143,11 +154,11 @@ export const completeTrip = async (id) => {
         throw new Error("Trip not found");
     }
 
+    const trip = tripResult.rows[0];
+
     if (trip.status !== "Dispatched") {
         throw new Error("Only dispatched trips can be completed");
     }
-
-    const trip = tripResult.rows[0];
 
     await pool.query(
         "UPDATE trips SET status='Completed', end_time=CURRENT_TIMESTAMP WHERE id=$1",
@@ -242,20 +253,26 @@ export const updateTrip = async (id, tripData) => {
 };
 
 export const cancelTrip = async (id) => {
-    const result = await pool.query(
-        "UPDATE trips SET status='Cancelled' WHERE id=$1 RETURNING *",
+
+    const tripResult = await pool.query(
+        "SELECT * FROM trips WHERE id = $1",
         [id]
     );
 
-    if (result.rows.length === 0) {
+    if (tripResult.rows.length === 0) {
         throw new Error("Trip not found");
     }
 
-    const trip = result.rows[0];
+    const trip = tripResult.rows[0];
 
     if (trip.status === "Completed") {
         throw new Error("Completed trip cannot be cancelled");
     }
+
+    const result = await pool.query(
+        "UPDATE trips SET status='Cancelled' WHERE id=$1 RETURNING *",
+        [id]
+    );
 
     return result.rows[0];
 };
