@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import Vehicles from './pages/Vehicles.jsx'
 import NotFound from './pages/NotFound.jsx'
 import ProtectedRoute from './routes/ProtectedRoute.jsx'
 import DashboardLayout from './layouts/DashboardLayout.jsx'
@@ -18,7 +19,8 @@ function App() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
-        {/* Vehicles, Drivers, Trips, Maintenance, Fuel & Expenses, Analytics
+        <Route path="/vehicles" element={<Vehicles />} />
+        {/* Drivers, Trips, Maintenance, Fuel & Expenses, Analytics
             routes get added here as each page is built */}
       </Route>
 

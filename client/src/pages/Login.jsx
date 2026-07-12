@@ -98,7 +98,7 @@ export default function Login() {
           </a>
         </div>
 
-        <Button type="submit" disabled={submitting} className="mt-2">
+        <Button type="submit" disabled={submitting} className="mt-2 w-full">
           {submitting ? 'Signing in…' : 'Sign In'}
         </Button>
       </form>
