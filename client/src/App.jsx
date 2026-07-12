@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Vehicles from './pages/Vehicles.jsx'
+import Drivers from './pages/Drivers.jsx'
+import Maintenance from './pages/Maintenance.jsx'
 import Trips from './pages/Trips.jsx'
 import NotFound from './pages/NotFound.jsx'
 import ProtectedRoute from './routes/ProtectedRoute.jsx'
@@ -21,8 +23,10 @@ function App() {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/vehicles" element={<Vehicles />} />
+        <Route path="/drivers" element={<Drivers />} />
+        <Route path="/maintenance" element={<Maintenance />} />
         <Route path="/trips" element={<Trips />} />
-        {/* Drivers, Maintenance, Fuel & Expenses, Analytics
+        {/* Fuel & Expenses, Analytics
             routes get added here as each page is built */}
       </Route>
 
